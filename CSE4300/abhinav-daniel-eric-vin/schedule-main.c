@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void scheduleMain(struct process **procArray, int procArraySize, int maxTimesteps) {
+int scheduleMain(struct process **procArray, int procArraySize, int maxTimesteps) {
 
     //create arrays for each queue level
     struct process **RRQueue = malloc(procArraySize * sizeof(struct process*)); //set all to nullptr
