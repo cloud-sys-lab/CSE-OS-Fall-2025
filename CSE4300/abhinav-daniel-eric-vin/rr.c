@@ -7,8 +7,8 @@ const int timeQuantum = 1; //A constant value so I can set th time quantum for r
 int tq = timeQuantum; //Keeps track of the remaining time quantum for current process
 
 void rr(struct process **procArray, int *arrayIdx, int globalTime){
-    int turn = counter%(int)arrayIdx;                            //^
-    procArray[turn] -> remainingTime -= 1;                       //Idex of the final value of the array
+    int turn = counter%(*arrayIdx);                           
+    procArray[turn] -> remainingTime -= 1;                      
     if(procArray[turn] -> remainingTime <= 0){
         procArray[turn] -> finishTime = globalTime+1;
         tq = timeQuantum;
@@ -18,10 +18,10 @@ void rr(struct process **procArray, int *arrayIdx, int globalTime){
             if(i == turn){
                 continue;
             }
-            procArray[i] = procArray[j];
+            procArray[j] = procArray[i];
             j++;
         }
-        arrayIdx--; 
+        (*arrayIdx)--; 
     }
 
     tq --;
