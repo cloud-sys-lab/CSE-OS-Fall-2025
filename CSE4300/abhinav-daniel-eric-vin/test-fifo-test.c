@@ -9,22 +9,30 @@ int main(void) {
 
     struct process *processA = (struct process*)malloc(sizeof(struct process));
     struct process *processB = (struct process*)malloc(sizeof(struct process));
-    int procArraySize = 2;
+    struct process *processC = (struct process*)malloc(sizeof(struct process));
+    struct process *processD = (struct process*)malloc(sizeof(struct process));
+    int procArraySize = 4;
 
     processA->remainingTime = 6;
     processB->remainingTime = 2;
+    processC->remainingTime = 15;
+    processD->remainingTime = 3;
 
     processA->arrivalTime = 0;
     processB->arrivalTime = 0;
+    processC->arrivalTime = 0;
+    processD->arrivalTime = 0;
 
     processA->priority = 3;
     processB->priority = 3;
+    processC->priority = 3;
+    processD->priority = 4;
 
-    struct process *processArray[] = {processA, processB};
+    struct process *processArray[] = {processA, processB, processC, processD};
 
     //run scheduler
 
-    scheduleMain(processArray, procArraySize, 10);
+    scheduleMain(processArray, procArraySize, 30);
 
 
     //print out finish times
@@ -35,6 +43,8 @@ int main(void) {
 
     free(processA);
     free(processB);
+    free(processC);
+    free(processD);
 
 
     return 0;

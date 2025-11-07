@@ -75,7 +75,7 @@ int scheduleMain(struct process **procArray, int procArraySize, int maxTimesteps
                     emptyQueues[3] = 0;
                 } else {
                     printf("Invalid process priority level!\n");
-                    return 13;
+                    exit(13);
                 }
             }
         }
