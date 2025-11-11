@@ -1,0 +1,26 @@
+# STM32CubeIDE / Eclipse
+.metadata/
+Debug/
+Release/
+*.launch
+*.ioc
+
+# Build artifacts
+*.o
+*.elf
+*.bin
+*.map
+*.hex
+*.d
+*.out
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup
+*.bak
+*.tmp
+
+# VSCode
+.vscode/
