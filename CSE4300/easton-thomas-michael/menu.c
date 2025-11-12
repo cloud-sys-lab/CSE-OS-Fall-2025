@@ -11,6 +11,10 @@ void print_with_escapes(const char *str) {
 		if (str[i] == '\\') {
 			i++;
 			switch (str[i]) {
+                case 'a': kprintf("%c", '\a'); break;
+                case 'b': kprintf("%c", '\b'); break;
+                case 'r': kprintf("%c", '\r'); break;
+                case 'v': kprintf("%c", '\v'); break;
 				case 'n': kprintf("%c", '\n'); break;
 				case 't': kprintf("%c", '\t'); break;
 				case '\\': kprintf("%c", '\\'); break;
@@ -126,5 +130,5 @@ static struct {
 } cmdtable[] = {
     /* operations */
     { "echo", 	cmd_echo },
-    { "sleep",  cmd_sleep}
+    { "sleep",  cmd_sleep }
 }
