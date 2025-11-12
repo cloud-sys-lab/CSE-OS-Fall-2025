@@ -91,6 +91,8 @@ int scheduleMain(struct process **procArray, int procArraySize, int maxTimesteps
             fifo(FIFOQueue, &FIFOQueueidx, t);
         } else if(emptyQueues[3] == 0) {
             sjf(SJFQueue, &SJFQueueidx, t);
+        } else {
+            printf("Time %d, No-Op\n", t);
         }
 
         t++; //increment time (based on type of algorithm)
