@@ -10,6 +10,7 @@ struct process* createProcess(char name[9], int remainingTime, int arrivalTime, 
 
     strcpy(newProcess->name, name);
     newProcess->remainingTime = remainingTime;
+    newProcess->arrivalTime = arrivalTime;
     newProcess->priority = priority;
 
     return newProcess;
@@ -43,11 +44,11 @@ void testA(){
         printf("%s finished at time %d\n", processes[i]->name, processes[i]->finishTime);
     }
     /*
-    assert(processA->finishTime == 5);
+    assert(processA->finishTime == 9);
     assert(processB->finishTime == 26);
-    assert(processC->finishTime == TODO);
-    assert(processD->finishTime == TODO);
-    assert(processE->finishTime == TODO);
+    assert(processC->finishTime == 4);
+    assert(processD->finishTime == 19);
+    assert(processE->finishTime == 20);
     assert(processF->finishTime == TODO);
     assert(processG->finishTime == TODO);
     assert(processH->finishTime == TODO);
