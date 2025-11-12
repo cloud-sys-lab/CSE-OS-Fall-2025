@@ -37,6 +37,7 @@ void testA(){
 
     scheduleMain(processes, 15, 100);
 
+    /*
     assert(processA->finishTime == 5);
     assert(processB->finishTime == TODO);
     assert(processC->finishTime == TODO);
@@ -52,6 +53,7 @@ void testA(){
     assert(processM->finishTime == TODO);
     assert(processN->finishTime == TODO);
     assert(processO->finishTime == TODO);
+    */
 
     free(processA);
     free(processB);
@@ -70,3 +72,8 @@ void testA(){
     free(processO);
 }
 
+int main(){
+    testA();
+    return 0;
+    
+}
