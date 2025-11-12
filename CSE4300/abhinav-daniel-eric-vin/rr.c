@@ -10,7 +10,7 @@ int tq = timeQuantum; //Keeps track of the remaining time quantum for current pr
 
 void rr(struct process **procArray, int *arrayIdx, int globalTime){
     int turn = counter%(*arrayIdx);    
-    printf("Time %d: Executing %s  RR\n", globalTime, procArray[turn]->name);
+    printf("Time %d: Executing %s   RR\n", globalTime, procArray[turn]->name);
     
     procArray[turn] -> remainingTime--;   
 
