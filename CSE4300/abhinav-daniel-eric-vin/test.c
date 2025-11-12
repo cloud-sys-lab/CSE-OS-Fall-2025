@@ -2,6 +2,7 @@
 #include "schedule-main.h"
 #include <string.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 
 struct process* createProcess(char name[9], int remainingTime, int arrivalTime, int priority) {
