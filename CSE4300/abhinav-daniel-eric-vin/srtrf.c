@@ -13,7 +13,7 @@ void srtrf(struct process **procArray, int *arrayIdx, int globalTime){
       pid = i;
     }
   }
-  printf("Time %d: Executing process%s  SRTRF \n", globalTime, procArray[pid]->name);
+  printf("Time %d: Executing %s  SRTRF \n", globalTime, procArray[pid]->name);
   //decrement the shortest time since it runs on this tick
   procArray[pid]->remainingTime--;
   //handle if the job finishes
