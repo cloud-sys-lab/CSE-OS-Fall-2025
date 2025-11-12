@@ -1,16 +1,11 @@
 #include <iostream>
 #include <vector>
-#include <iomanip>
+#include <cstdint>
 
 // Let's try to simulate virtual memory!
 
 // going to use structs instead of bitwise operations
 // but we can still account for the offset of bits and such
-
-int PAGE_SIZE = 4096; // bytes, 4K
-int PAGE_COUNT = 1024; // 1024 entries in the page table
-int FRAME_SIZE = 4096; // bytes, 4K per physical frame size
-int FRAME_COUNT = 1024; // 1024 physical frames
 
 
 struct pageTableEntry {
@@ -24,103 +19,134 @@ struct pageTableEntry {
     int pageFrameNum = -1;
 };
 
-int virtualToPhysicalAddress (int virtualAddress, const std::vector<pageTableEntry>& pageTable) {
-    // first let's calculate the offset and find the virtual page number
-    int offset = virtualAddress & (PAGE_SIZE - 1); // offset is based on the size of each page
-    int virtualPageNumber = virtualAddress / PAGE_SIZE; // essentially shifts the number right by 12 bits
+class MemoryManager {
+    private:
+        std::vector<pageTableEntry> pageTable;
+        std::vector<uint8_t> physicalMemory;
 
-    // now lets validate the virtual address (bounds and valid bit)
-    if (virtualPageNumber >= PAGE_COUNT || virtualPageNumber < 0) {
-        std::cerr << "[ERR] Attempted to access out-of-bound virtual address!" << std::endl;
-        return -1;
-    }
+        int PAGE_SIZE; // 4096 bytes, 4K per page
+        int PAGE_COUNT; // 1024 entries in the page table
+        int PHYSICAL_SIZE; // # of bytes of physical memory
 
-    const pageTableEntry& entry = pageTable[virtualPageNumber];
+        void _initializeMemory() {
+            pageTable.resize(PAGE_COUNT);
+            physicalMemory.resize(PHYSICAL_SIZE);
+        }
 
-    if (!entry.validBit) {
-        std::cerr << "[ERR] Page fault occurred!" << std::endl;
-        return -1;
-    }
+        void writeMemory(int physicalAddress, uint8_t data) {
+            if (physicalAddress >= PHYSICAL_SIZE || physicalAddress < 0)
+                throw "Physical address out of bounds!";
 
-    // now we can map the virtual to the physical
-    int pageFrameNum = entry.pageFrameNum;
-    int physicalAddress = (pageFrameNum * FRAME_SIZE) + offset;
+            physicalMemory[physicalAddress] = data;
+        }
 
+        uint8_t readMemory(int physicalAddress) {
+            if (physicalAddress >= PHYSICAL_SIZE || physicalAddress < 0)
+                throw "Physical address out of bounds!";
 
-    return physicalAddress;
-}
+            return physicalMemory[physicalAddress];
+        }
 
-int* readPhysicalMemory (int physicalAddress, std::vector<std::vector<int>>& physicalMemory) {
-    // first lets calculate the offsets n such
-    int frameNumber = physicalAddress / FRAME_SIZE; // 12 bit shift
-    int byteOffset = physicalAddress % FRAME_SIZE;
+        int virtualToPhysicalAddress (int virtualAddress) {
+            // first let's calculate the offset and find the virtual page number
+            int offset = virtualAddress & (PAGE_SIZE - 1); // offset is based on the size of each page
+            int virtualPageNumber = virtualAddress / PAGE_SIZE; // essentially shifts the number right by 12 bits
 
-    // check bounds
-    if (frameNumber >= FRAME_COUNT || frameNumber < 0) {
-        std::cerr << "[ERR] Attempted to access out-of-bound physical address!" << std::endl;
-        return nullptr;
-    }
+            // now lets validate the virtual address (bounds and valid bit)
+            if (virtualPageNumber >= PAGE_COUNT || virtualPageNumber < 0)
+                throw "Attempted to access out-of-bound virtual address!";
 
-    // make sure we're at the start of a frame
-    if (byteOffset % sizeof(int) != 0 || byteOffset >= FRAME_SIZE) {
-        std::cerr << "[ERR] Misaligned or out-of-bounds access within frame!" << std::endl;
-        return nullptr;
-    }
+            const pageTableEntry& entry = pageTable[virtualPageNumber];
 
-    // calculate index based on sizeof(int)
-    int index = byteOffset / sizeof(int);
+            if (!entry.validBit)
+                throw "Page fault occurred!";
 
-    // return pointer to the value
-    return &physicalMemory[frameNumber][index];
-}
+            // now we can map the virtual to the physical
+            int pageFrameNum = entry.pageFrameNum;
+            int physicalAddress = (pageFrameNum * PAGE_SIZE) + offset;
 
-void printPageTableEntry(int virtualPageNumber, const std::vector<pageTableEntry>& pageTable) {
-    if (virtualPageNumber >= PAGE_COUNT) {
-        std::cerr << "[ERR] Invalid page number" << std::endl;
-        return;
-    }
+            if (physicalAddress >= PHYSICAL_SIZE || physicalAddress < 0)
+                throw "Physical address out of bounds!";
 
-    const pageTableEntry& entry = pageTable[virtualPageNumber];
-    std::cout << "Page " << virtualPageNumber << ": ";
-    std::cout << "Valid = " << entry.validBit;
-    std::cout << ", Present = " << entry.presentBit;
-    std::cout << ", Frame = " << entry.pageFrameNum;
-    std::cout << ", Referenced = " << entry.referenceBit;
-    std::cout << ", Modified = " << entry.modifyBit;
-    std::cout << std::endl;
-}
+            pageTable[virtualPageNumber].referenceBit = true;
 
+            return physicalAddress;
+        }
+
+    public:
+        MemoryManager()
+            : PAGE_SIZE(4096), PAGE_COUNT(1024), PHYSICAL_SIZE(4194304){
+            _initializeMemory();
+        }
+
+        MemoryManager(int page_size, int num_pages, int num_bytes)
+            : PAGE_SIZE(page_size), PAGE_COUNT(num_pages), PHYSICAL_SIZE(num_bytes){
+            _initializeMemory();
+        }
+
+        void allocatePage(int virtualPageNumber, int frameNumber) {
+            if (virtualPageNumber >= PAGE_COUNT || virtualPageNumber < 0)
+                throw "Invalid virtual page number!";
+            if (frameNumber >= (PHYSICAL_SIZE / PAGE_SIZE) || frameNumber < 0)
+                throw "Invalid frame number!";
+
+            pageTable[virtualPageNumber].validBit = true;
+            pageTable[virtualPageNumber].pageFrameNum = frameNumber;
+            pageTable[virtualPageNumber].presentBit = true;
+        }
+
+        void writeVirtualMemory (int virtualAddress, uint8_t data) {
+            int physicalAddress = virtualToPhysicalAddress(virtualAddress);
+            writeMemory(physicalAddress, data);
+
+            int vpn = virtualAddress / PAGE_SIZE;
+            pageTable[vpn].modifyBit = true;
+        }
+
+        uint8_t readVirtualMemory (int virtualAddress) {
+            int physicalAddress = virtualToPhysicalAddress(virtualAddress);
+            return readMemory(physicalAddress);
+        }
+
+        void printPageTableEntry(int virtualPageNumber) {
+            if (virtualPageNumber >= PAGE_COUNT)
+                throw "Invalid page number";
+
+            const pageTableEntry& entry = pageTable[virtualPageNumber];
+            std::cout << "Page " << virtualPageNumber << ": ";
+            std::cout << "Valid = " << entry.validBit;
+            std::cout << ", Present = " << entry.presentBit;
+            std::cout << ", Frame = " << entry.pageFrameNum;
+            std::cout << ", Referenced = " << entry.referenceBit;
+            std::cout << ", Modified = " << entry.modifyBit;
+            std::cout << std::endl;
+        }
+};
 
 int main() {
-    // lets start by creating the pageTable and an vector representing physical memory
-    std::vector<pageTableEntry> pageTable;
-    pageTable.resize(PAGE_COUNT);
+    MemoryManager mm;
 
-    std::vector<std::vector<int>> physicalMemory;
-    physicalMemory.resize(FRAME_COUNT, std::vector<int>(FRAME_SIZE));
+    mm.allocatePage(0, 69);
 
-    // lets create an example entry and print it's addresses or something
-    pageTable[0].validBit = true;
-    pageTable[0].presentBit = true;
-    pageTable[0].modifyBit = true;
-    pageTable[0].referenceBit = true;
-    pageTable[0].pageFrameNum = 69;
+    int virtualAddress = 0x0000;
 
-    for (int i = 0; i < FRAME_SIZE / sizeof(int); i++) {
-        physicalMemory[69][i] = i + 420;
+    for (int i = 0; i < 4096; i++) {
+        uint8_t data = i % 256;
+        mm.writeVirtualMemory(virtualAddress + i, data);
     }
 
-    int virtualAddress = 0x0000 + (69 * sizeof(int));
-    int physicalAddress = virtualToPhysicalAddress(virtualAddress, pageTable);
-    int* valuePointer = readPhysicalMemory(physicalAddress, physicalMemory);
+    virtualAddress = 0x0000;
 
-    std::cout << std::showbase << std::hex;
-    std::cout << "Page Table Entry for Virtual Address " << virtualAddress << ": " << std::endl;
-    printPageTableEntry(1, pageTable);
+    int bloop[5] = {0x0485, 0x0089, 0x0a5f, 0x076e, 0x0f80};
 
-    std::cout << "Virtual Address: " << virtualAddress << std::endl;
-    std::cout << "Physical Address: " << physicalAddress << std::endl;
-    std::cout << "Value at Physical Address: " << std::dec << *valuePointer << std::endl;
+    for (auto addr : bloop) {
+        std::cout << std::showbase << std::hex;
+        std::cout << "Page Table Entry for Virtual Address " << addr << ": " << std::endl;
+        mm.printPageTableEntry(addr / 4096);
+
+        std::cout << "Virtual Address: " << addr << std::endl;
+        std::cout << "Value at Physical Address: " << std::dec << static_cast<int>(mm.readVirtualMemory(addr)) << std::endl << std::endl;
+    }
 
     return 0;
 
