@@ -1,0 +1,130 @@
+#include <synch.h>
+static struct semaphore *done_sem;
+
+
+/*
+ * Helper function for cmd_echo to handle escape characters
+ */
+void print_with_escapes(const char *str) {
+	int i;
+	for (i = 0; str[i] != '\0'; i++) {
+		if (str[i] == '\\') {
+			i++;
+			switch (str[i]) {
+				case 'n': kprintf("%c", '\n'); break;
+				case 't': kprintf("%c", '\t'); break;
+				case '\\': kprintf("%c", '\\'); break;
+				default: kprintf("%c", '\\'); kprintf("%c", str[i]); break;
+			}
+		} else {
+			kprintf("%c", str[i]);
+		}
+	}
+}
+
+/*
+ * Command for echoing a string
+ */
+static int cmd_echo(int nargs, char **args) {
+	if (nargs <= 1) {
+		kprintf("Usage: echo [option] String\n");
+		return EINVAL;
+	}
+
+	int i = 1;
+	char *option = args[1];
+	
+	if (strcmp(option, "--help") == 0) {
+		kprintf("Usage: echo [option] String\nOptions:\n\t-n: Removes new line after echo\n\t-E: Default option\n\t-e: Enables escape characters (i.e. \\n, \\t, etc.)\n\t--help: Shows this menu");
+		return 0;
+	}
+
+	if (!strcmp(option, "-n") || !strcmp(option, "-E") || !strcmp(option, "-e")) i++;
+	
+	for (i; i < nargs; i++) {
+		if (strcmp(option, "-e")) {
+			kprintf("%s", args[i]);
+		} else {
+			
+			print_with_escapes(args[i]);
+		}
+
+		if (i < nargs - 1) {
+			kprintf(" ");
+		}
+	}
+	if (strcmp(option, "-n")) kprintf("\n");
+	return 0;
+}
+
+
+
+
+
+
+
+/*
+ * Put the actual child thread asleep for n seconds
+ */
+static
+int
+sleep_thread(void* ptr, unsigned long n)
+{
+        kprintf("Child sleeping for %lu seconds\n", n);
+        clocksleep(n);
+        kprintf("Child done sleeping\n");
+        V(done_sem);
+        return 0;
+}
+
+/*
+ * Command blocking shell for n sec.
+ */
+static
+int
+cmd_sleep(int nargs, char **args)
+{
+        int result;
+        unsigned long n;
+
+        // Semaphore 
+        done_sem = sem_create("done_sem", 0);
+        if (done_sem == NULL) {
+                kprintf("Could not create semaphore\n");
+                return 1;
+        }
+
+        // Taking number
+        if (nargs < 2) {
+                kprintf("Usage: sleep <seconds>\n");
+                return 1;
+        }
+        n = (unsigned long)atoi(args[1]);
+        if (result) {
+                kprintf("Invalid number\n");
+                return 1;
+        }
+
+        // Create child
+        result = thread_fork(args[0], NULL, n, sleep_thread, NULL);
+
+        // Wait for the child to finish
+        kprintf("Parent waiting for child to finish\n");
+        P(done_sem);
+        kprintf("Parent continuing\n");
+
+        return 0;
+}
+
+
+
+
+
+static struct {
+	const char *name;
+	int (*func)(int nargs, char **args);
+} cmdtable[] = {
+    /* operations */
+    { "echo", 	cmd_echo },
+    { "sleep",  cmd_sleep}
+}
