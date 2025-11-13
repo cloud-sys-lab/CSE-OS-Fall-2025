@@ -1,4 +1,5 @@
 #include <synch.h>
+#include <vnode.h>
 static struct semaphore *done_sem;
 
 
@@ -28,6 +29,7 @@ void print_with_escapes(const char *str) {
 
 /*
  * Command for echoing a string
+ * By Easton
  */
 static int cmd_echo(int nargs, char **args) {
 	if (nargs <= 1) {
@@ -69,6 +71,7 @@ static int cmd_echo(int nargs, char **args) {
 
 /*
  * Put the actual child thread asleep for n seconds
+ * By Thomas
  */
 static
 int
@@ -122,6 +125,63 @@ cmd_sleep(int nargs, char **args)
 
 
 
+static
+int
+cmd_cat(int nargs, char **args)
+{
+    int i, result;
+    char *filename;
+    struct vnode *v;    
+    struct uio ku;        // kernel-space UIO structure
+    char buffer[512];     // buffer to read data into
+    off_t offset;         // position in the file
+
+    // require at least one file
+    if (nargs <= 1) {
+        kprintf("Usage: cat <filename1> [filename2] ...\n");
+        return EINVAL;
+    }
+
+    for (i = 1; i < nargs; i++) {
+        filename = args[i];
+        offset = 0; 
+        result = vfs_open(filename, O_RDONLY, &v);
+        
+        if (result) {
+            kprintf("cat: %s: %s\n", filename, strerror(result));
+            continue;  
+        }
+
+        while (1) {
+            mk_kuio(&ku, buffer, sizeof(buffer) - 1, offset, UIO_READ);
+
+            result = VOP_READ(v, &ku);
+            if (result) {
+                kprintf("cat: Error reading %s: %s\n", filename, strerror(result));
+                break;
+            }
+
+            size_t bytes_read = (sizeof(buffer) - 1) - ku.uio_resid;
+
+            if (bytes_read == 0) {
+                break;
+            }
+
+            buffer[bytes_read] = '\0';
+            
+            kprintf("%s", buffer);
+
+            offset = ku.uio_offset;
+        }
+
+        vfs_close(v);
+    }
+
+    return 0;
+}
+
+
+
 
 
 static struct {
@@ -130,5 +190,6 @@ static struct {
 } cmdtable[] = {
     /* operations */
     { "echo", 	cmd_echo },
-    { "sleep",  cmd_sleep }
+    { "sleep",  cmd_sleep },
+    { "cat",    cmd_cat }
 }
