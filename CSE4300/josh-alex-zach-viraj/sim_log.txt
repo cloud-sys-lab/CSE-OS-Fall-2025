@@ -5,128 +5,500 @@
 
 Workload before simulation
 TID    ARR      BURST    STATE    PRIO  
-1      0        5        NEW      10    
-2      0        3        NEW      7     
-3      2        6        NEW      5     
-4      4        4        NEW      4     
+1      0        40       NEW      0     
+2      0        40       NEW      0     
+3      0        40       NEW      0     
+4      0        40       NEW      0     
 
 t=0
-	Ready: [T2]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T1]
+	Running: [T1 | T2]
 	Finished: []
 
 t=1
-	Ready: [T1]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T2]
+	Running: [T3 | T4]
 	Finished: []
 
 t=2
-	Ready: [T3, T2]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T1]
+	Running: [T1 | T2]
 	Finished: []
 
 t=3
-	Ready: [T2, T1]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T3]
+	Running: [T3 | T4]
 	Finished: []
 
 t=4
-	Ready: [T1, T4, T3]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T2]
+	Running: [T1 | T2]
 	Finished: []
 
 t=5
-	Ready: [T4, T3, T2]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T1]
+	Running: [T3 | T4]
 	Finished: []
 
 t=6
-	Ready: [T3, T2, T1]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T4]
+	Running: [T1 | T2]
 	Finished: []
 
 t=7
-	Ready: [T2, T1, T4]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T3]
+	Running: [T3 | T4]
 	Finished: []
 
 t=8
-	Ready: [T1, T4, T3]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T2]
+	Running: [T1 | T2]
 	Finished: []
 
 t=9
-	Ready: [T4, T3]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T1]
-	Finished: [T2]
+	Running: [T3 | T4]
+	Finished: []
 
 t=10
-	Ready: [T3, T1]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T4]
-	Finished: [T2]
+	Running: [T1 | T2]
+	Finished: []
 
 t=11
-	Ready: [T1, T4]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T3]
-	Finished: [T2]
+	Running: [T3 | T4]
+	Finished: []
 
 t=12
-	Ready: [T4, T3]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T1]
-	Finished: [T2]
+	Running: [T1 | T2]
+	Finished: []
 
 t=13
-	Ready: [T3]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T4]
-	Finished: [T2, T1]
+	Running: [T3 | T4]
+	Finished: []
 
 t=14
-	Ready: [T4]
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T3]
-	Finished: [T2, T1]
+	Running: [T1 | T2]
+	Finished: []
 
 t=15
-	Ready: [T3]
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T4]
-	Finished: [T2, T1]
+	Running: [T3 | T4]
+	Finished: []
 
 t=16
-	Ready: []
+	Ready: [T3, T4]
 	Waiting: []
-	Running: [T3]
-	Finished: [T2, T1, T4]
+	Running: [T1 | T2]
+	Finished: []
 
 t=17
-	Ready: []
+	Ready: [T1, T2]
 	Waiting: []
-	Running: [T3]
-	Finished: [T2, T1, T4]
+	Running: [T3 | T4]
+	Finished: []
 
 t=18
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=19
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=20
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=21
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=22
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=23
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=24
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=25
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=26
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=27
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=28
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=29
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=30
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=31
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=32
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=33
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=34
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=35
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=36
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=37
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=38
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=39
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=40
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=41
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=42
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=43
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=44
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=45
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=46
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=47
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=48
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=49
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=50
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=51
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=52
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=53
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=54
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=55
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=56
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=57
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=58
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=59
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=60
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=61
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=62
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=63
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=64
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=65
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=66
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=67
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=68
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=69
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=70
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=71
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=72
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=73
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=74
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=75
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=76
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=77
+	Ready: [T1, T2]
+	Waiting: []
+	Running: [T3 | T4]
+	Finished: []
+
+t=78
+	Ready: [T3, T4]
+	Waiting: []
+	Running: [T1 | T2]
+	Finished: []
+
+t=79
 	Ready: []
 	Waiting: []
-	Running: [-]
-	Finished: [T2, T1, T4, T3]
+	Running: [T3 | T4]
+	Finished: [T1, T2]
+
+t=80
+	Ready: []
+	Waiting: []
+	Running: [- | -]
+	Finished: [T1, T2, T3, T4]
 
 
 # Final statistics
-Average response time:   1.000
-Average turnaround time: 12.500
-Average waiting time:    8.000
+Average response time:   0.500
+Average turnaround time: 79.500
+Average waiting time:    39.500
 
