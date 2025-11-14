@@ -1,5 +1,7 @@
 #include <synch.h>
 #include <vnode.h>
+#include <machine/spl.h>
+#include <array.h>
 static struct semaphore *done_sem;
 
 
@@ -182,6 +184,29 @@ cmd_cat(int nargs, char **args)
 
 
 
+static int cmd_ps(int nargs, char **args) {
+	if (nargs != 1) {
+		kprintf("Usage: ps\n");
+		return EINVAL;
+	}
+
+	int s = splhigh();
+    extern struct array *allthreads;
+
+	kprintf("TID\tNAME\n");
+	int i;
+	for (i = 0; i < array_getnum(allthreads); i++) {
+		struct thread *t = array_getguy(allthreads, i);
+		kprintf("%3u\t%s\n", t->thread_id, t->t_name);
+	}
+
+	splx(s);
+	
+	return 0;
+}
+
+
+
 
 
 static struct {
@@ -191,5 +216,6 @@ static struct {
     /* operations */
     { "echo", 	cmd_echo },
     { "sleep",  cmd_sleep },
-    { "cat",    cmd_cat }
+    { "cat",    cmd_cat },
+    { "ps",     cmd_ps }
 }
