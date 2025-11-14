@@ -1,5 +1,10 @@
 #include <synch.h>
+#include <types.h>
 #include <vnode.h>
+#include <types.h>
+#include <uio.h>
+#include <vfs.h>
+#include <sfs.h>
 #include <machine/spl.h>
 #include <array.h>
 static struct semaphore *done_sem;
@@ -205,6 +210,45 @@ static int cmd_ps(int nargs, char **args) {
 	return 0;
 }
 
+/*
+ * ls command by Thomas 
+ * Works only with no arguments. Arguments are ignored.
+ */
+int cmd_ls(int nargs, char **args) {
+
+        int err;
+        struct vnode *v;
+        struct uio ku;
+        struct sfs_dir d;
+        off_t offset = 0;
+
+        err = vfs_open(".", O_RDONLY, &v);
+        if (err) {
+                kprintf("Error while opening file\n");
+                return 1;
+        }
+        while (1) {
+                struct iovec iov;
+                char buffer[sizeof(struct sfs_dir)];
+                iov.iov_un.un_kbase = &d;
+                iov.iov_len = sizeof(d);
+                ku.uio_iovec = iov;
+                ku.uio_offset = offset;
+                ku.uio_resid = sizeof(buffer);
+                ku.uio_segflg = UIO_SYSSPACE;
+                ku.uio_rw = UIO_READ;
+                ku.uio_space = NULL;
+
+                err = VOP_GETDIRENTRY(v, &ku);
+                if (err) break;
+                if (ku.uio_resid == sizeof(d)) break;
+                offset = ku.uio_offset;
+
+                kprintf("%s\n", d.sfd_name);
+        }
+        vfs_close(v);
+        return 0;
+}
 
 
 
@@ -218,4 +262,5 @@ static struct {
     { "sleep",  cmd_sleep },
     { "cat",    cmd_cat },
     { "ps",     cmd_ps }
+
 }
