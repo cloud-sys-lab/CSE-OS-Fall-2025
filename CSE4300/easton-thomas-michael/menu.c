@@ -268,7 +268,81 @@ cmd_ls(int nargs, char **args)
 }
 
 
+/*
+ * Process a single command.
+ */
+static
+int
+cmd_dispatch(char *cmd)
+{
+	time_t beforesecs, aftersecs, secs;
+	u_int32_t beforensecs, afternsecs, nsecs;
+	char *args[MAXMENUARGS];
+	int nargs=0;
+	char *word;
+	char *context;
+	int i, result;
+	int background = 0;
 
+	for (word = strtok_r(cmd, " \t", &context);
+	     word != NULL;
+	     word = strtok_r(NULL, " \t", &context)) {
+
+		if (nargs >= MAXMENUARGS) {
+			kprintf("Command line has too many words\n");
+			return E2BIG;
+		}
+
+		if (strcmp(word, "&") == 0 && strtok_r(NULL, " \t", &context) == NULL) {
+			background = 1;
+			break;
+		}
+
+		args[nargs++] = word;
+	}
+
+	if (nargs==0) {
+		return 0;
+	}
+
+	for (i=0; cmdtable[i].name; i++) {
+		if (*cmdtable[i].name && !strcmp(args[0], cmdtable[i].name)) {
+			assert(cmdtable[i].func!=NULL);
+
+			//if (!strcmp("&", args[nargs-1])) {
+			if (background) {
+				kprintf("Running in background\n");
+				char **bgargs = kmalloc(sizeof(char*) * nargs);
+				int j;
+				for (j = 0; j < nargs; j++) {
+					bgargs[j] = kstrdup(args[j]);
+				}
+
+				thread_fork(args[0], nargs, bgargs, cmdtable[i].func, NULL);
+
+				return 0;
+			}
+
+			gettime(&beforesecs, &beforensecs);
+
+			result = cmdtable[i].func(nargs, args);
+
+			gettime(&aftersecs, &afternsecs);
+			getinterval(beforesecs, beforensecs,
+				    aftersecs, afternsecs,
+				    &secs, &nsecs);
+
+			kprintf("Operation took %lu.%09lu seconds\n",
+				(unsigned long) secs,
+				(unsigned long) nsecs);
+
+			return result;
+		}
+	}
+
+	kprintf("%s: Command not found\n", args[0]);
+	return EINVAL;
+}
 
 
 
