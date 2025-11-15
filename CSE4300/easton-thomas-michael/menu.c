@@ -1,7 +1,6 @@
 #include <synch.h>
 #include <types.h>
 #include <vnode.h>
-#include <types.h>
 #include <uio.h>
 #include <vfs.h>
 #include <sfs.h>
@@ -261,6 +260,7 @@ static struct {
     { "echo", 	cmd_echo },
     { "sleep",  cmd_sleep },
     { "cat",    cmd_cat },
-    { "ps",     cmd_ps }
+    { "ps",     cmd_ps },
+    { "ls",     cmd_ls },
 
 }
