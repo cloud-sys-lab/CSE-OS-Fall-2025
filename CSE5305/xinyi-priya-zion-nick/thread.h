@@ -8,6 +8,9 @@ struct thread {
     int response;       // response time
     int burst;          // burst time
     int wait;           // wait time
+
+    int completion_time;
+    int first_run; 
 };
 
 #endif /* _THREAD_H_ */
