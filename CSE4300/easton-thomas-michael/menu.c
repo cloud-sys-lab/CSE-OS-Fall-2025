@@ -229,7 +229,7 @@ cmd_ls(int nargs, char **args)
 
     err = vfs_open(path, O_RDONLY, &v);
     if (err) {
-        kprintf("ls: impossible d'ouvrir le dossier %s (err=%d)\n", path, err);
+        kprintf("ls: failed to open file/directory %s (err=%d)\n", path, err);
         return 1;
     }
 
@@ -265,6 +265,79 @@ cmd_ls(int nargs, char **args)
 
     vfs_close(v);
     return 0;
+}
+
+
+static
+int
+cmd_cp(int nargs, char **args)
+{
+    char *source_file, *dest_file;
+    struct vnode *v_source, *v_dest;
+    struct uio ku_read, ku_write;
+    char buffer[512]; // 512 byte buffer
+    off_t offset;
+    int result, n_read;
+
+    if (nargs != 3) {
+        kprintf("cp <source_file> <destination_file>\n");
+        return EINVAL;
+    }
+
+    source_file = args[1];
+    dest_file = args[2];
+    offset = 0; // start at beginning of file
+
+    result = vfs_open(source_file, O_RDONLY, &v_source);
+    if (result) {
+        kprintf("cp: %s: %s\n", source_file, strerror(result));
+        return result;
+    }
+
+    result = vfs_open(dest_file, O_WRONLY | O_CREAT | O_TRUNC, &v_dest);
+    if (result) {
+        kprintf("cp: %s: %s\n", dest_file, strerror(result));
+        vfs_close(v_source); // clean up source file
+        return result;
+    }
+
+    while (1) {
+        mk_kuio(&ku_read, buffer, sizeof(buffer), offset, UIO_READ);
+
+        // read from the source
+        result = VOP_READ(v_source, &ku_read);
+        if (result) {
+            kprintf("cp: Error reading %s: %s\n", source_file, strerror(result));
+            break;
+        }
+
+        // check how much was read
+        n_read = sizeof(buffer) - ku_read.uio_resid;
+
+        if (n_read == 0) {
+            // end of the file
+            break;
+        }
+
+        mk_kuio(&ku_write, buffer, n_read, offset, UIO_WRITE);
+
+        // write to destination
+        result = VOP_WRITE(v_dest, &ku_write);
+        if (result) {
+            kprintf("cp: Error writing %s: %s\n", dest_file, strerror(result));
+            break;
+        }
+
+        // update offset for next loop
+        offset += n_read;
+    }
+
+    // close files
+    vfs_close(v_source);
+    vfs_close(v_dest);
+
+    // result should return 0 if works and no problems
+    return result;
 }
 
 
@@ -357,6 +430,9 @@ static struct {
     { "cat",    cmd_cat },
     { "ps",     cmd_ps },
     { "ls",     cmd_ls },
+	{ "cp",		cmd_cp }
 
 }
+
+
 
