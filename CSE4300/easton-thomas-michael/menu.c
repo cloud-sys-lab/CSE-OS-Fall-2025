@@ -230,7 +230,7 @@ cmd_ls(int nargs, char **args)
 
     err = vfs_open(path, O_RDONLY, &v);
     if (err) {
-        kprintf("ls: impossible d'ouvrir le dossier %s (err=%d)\n", path, err);
+        kprintf("ls: failed to open file/directory %s (err=%d)\n", path, err);
         return 1;
     }
 
@@ -285,4 +285,5 @@ static struct {
     { "ps",     cmd_ps }
 
 }
+
 
