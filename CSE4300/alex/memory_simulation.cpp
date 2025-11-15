@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdint>
+// #include <stdexcept> // will fix error handling laterrrr
 
 // Let's try to simulate virtual memory!
 
@@ -22,6 +23,8 @@ class MemoryManager {
         std::vector<uint8_t> physicalMemory;
         std::vector<bool> freeFrames;
 
+        std::vector<uint8_t> diskStorage; // just going to simulate disk storage with a vector
+
         int PAGE_SIZE; // 4096 bytes, 4K per page
         int PAGE_COUNT; // 1024 entries in the page table
         int PHYSICAL_SIZE; // # of bytes of physical memory
@@ -32,6 +35,8 @@ class MemoryManager {
             pageTable.resize(PAGE_COUNT);
             physicalMemory.resize(PHYSICAL_SIZE);
             freeFrames.resize(PHYSICAL_SIZE / PAGE_SIZE, true);
+
+            diskStorage.resize(PAGE_COUNT * PAGE_SIZE); // give disk space for every entry
         }
 
         void writeMemory(int physicalAddress, uint8_t data) {
@@ -92,6 +97,8 @@ class MemoryManager {
         }
 
         void _handlePageFault(int virtualPageNumber){
+            std::cout << "Page fault at VPN: " <<virtualPageNumber << std::endl;
+
             pageTableEntry& entry = pageTable[virtualPageNumber];
 
             // check for free frame, if none, page replacement
@@ -105,7 +112,7 @@ class MemoryManager {
 
             if (freeFrame == -1) {
                 entry.pageFrameNum = _replacePage();
-                _readPageFromDisk(virtualPageNumber);
+                _readPageFromDisk(virtualPageNumber, entry.pageFrameNum);
             } else
                 entry.pageFrameNum = freeFrame;
 
@@ -116,14 +123,8 @@ class MemoryManager {
 
         // returns new frame number
         int _replacePage() {
-            // first we do the clock thing
-            int newFrameNumber = _clockReplacement();
+            std::cout << "No free frame found, replacing page" << std::endl;
 
-            // then we return the new frame number
-            return newFrameNumber;
-        }
-
-        int _clockReplacement() {
             int frameNumber = -1;
             int replacedVPN = -1;
             bool entryWasModified = false;
@@ -151,7 +152,7 @@ class MemoryManager {
 
             if (entryWasModified) _writePageToDisk(replacedVPN);
 
-            freeFrames[pageTable[replacedVPN].pageFrameNum] = true;
+            freeFrames[frameNumber] = true;
             pageTable[replacedVPN].pageFrameNum = -1;
             _wipeMemoryFrame(frameNumber);
 
@@ -159,10 +160,24 @@ class MemoryManager {
         }
 
         void _writePageToDisk(int virtualPageNumber){
+            int frameNum = pageTable[virtualPageNumber].pageFrameNum;
 
+            for (int i = 0; i < PAGE_SIZE; i++) {
+                diskStorage[virtualPageNumber * PAGE_SIZE + i] = physicalMemory[frameNum * PAGE_SIZE + i];
+            }
         }
 
-        void _readPageFromDisk(int virtualPageNumber){}
+        void _readPageFromDisk(int virtualPageNumber, int frameNumber){
+            for (int i = 0; i < PAGE_SIZE; i++) {
+                physicalMemory[frameNumber * PAGE_SIZE + i] = diskStorage[virtualPageNumber * PAGE_SIZE + i];
+            }
+        }
+
+        void _deletePageFromDisk(int virtualPageNumber) {
+            for (int i = 0; i < PAGE_SIZE; i++) {
+                diskStorage[virtualPageNumber * PAGE_SIZE + i] = 0;
+            }
+        }
 
     public:
         MemoryManager()
@@ -249,7 +264,7 @@ class MemoryManager {
                 entry.pageFrameNum = -1;
 
             } else {
-                // delete entry from disk
+                _deletePageFromDisk(virtualPageNumber);
             }
 
             entry.modifyBit = false;
@@ -273,21 +288,12 @@ class MemoryManager {
 
 int main() {
     try {
-        MemoryManager mm;
-
-        for (int i = 0; i < 512; i++) mm.allocatePage(i, i);
+        MemoryManager mm(4096, 1024, 2*4096);
 
         int virtualAddress = mm.allocateAnyPage();
 
-        for (int i = 513; i < 569; i++) mm.allocatePage(i, i);
-
-        int testAddr = mm.allocateAnyPage();
-
         std::cout << std::showbase << std::hex << "Allocated page for future tests: " <<
         virtualAddress << std::endl;
-
-        std::cout << "Allocated page to see if any page really works: " <<
-        testAddr << std::endl << "- - -" << std::endl << std::endl;
 
         for (int i = 0; i < 4096; i++) {
             uint8_t data = i % 256;
@@ -306,6 +312,19 @@ int main() {
             std::cout << "Value at Physical Address: " << std::dec <<
             static_cast<int>(mm.readVirtualMemory(addr)) << std::endl << std::endl;
         }
+
+        std::cout << std::showbase << std::hex;
+        int newAddress = mm.allocateAnyPage();
+
+        int newAddress2 = mm.allocateAnyPage();
+        std::cout << "Page Table Entry for Virtual Address " << virtualAddress << ": " << std::endl;
+        mm.printPageTableEntry(virtualAddress / 4096);
+
+        std::cout << "Page Table Entry for Virtual Address " << newAddress << ": " << std::endl;
+        mm.printPageTableEntry(newAddress / 4096);
+
+        std::cout << "Page Table Entry for Virtual Address " << newAddress2 << ": " << std::endl;
+        mm.printPageTableEntry(newAddress2 / 4096);
 
         return 0;
     } catch (const char* error) {
