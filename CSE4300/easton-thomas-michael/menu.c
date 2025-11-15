@@ -214,41 +214,62 @@ static int cmd_ps(int nargs, char **args) {
  * ls command by Thomas 
  * Works only with no arguments. Arguments are ignored.
  */
-int cmd_ls(int nargs, char **args) {
+int
+cmd_ls(int nargs, char **args)
+{
+    int err;
+    struct vnode *v;
+    char *path;
+    off_t offset = 0;
 
-        int err;
-        struct vnode *v;
+    if (nargs > 1) {
+        path = args[1];
+    } else {
+        path = ".";
+    }
+
+    err = vfs_open(path, O_RDONLY, &v);
+    if (err) {
+        kprintf("ls: impossible d'ouvrir le dossier %s (err=%d)\n", path, err);
+        return 1;
+    }
+
+    while (1) {
         struct uio ku;
-        struct sfs_dir d;
-        off_t offset = 0;
+        char name[NAME_MAX + 1];
+        // initialize name
+        bzero(name, sizeof(name));
 
-        err = vfs_open(".", O_RDONLY, &v);
+        // define uio
+        mk_kuio(&ku, name, sizeof(name), offset, UIO_READ);
+        ku.uio_segflg = UIO_SYSSPACE;
+        ku.uio_space = NULL;
+
+        // read entry
+        err = VOP_GETDIRENTRY(v, &ku);
+
+        // Check errors or end of file
         if (err) {
-                kprintf("Error while opening file\n");
-                return 1;
+            break;
         }
-        while (1) {
-                struct iovec iov;
-                char buffer[sizeof(struct sfs_dir)];
-                iov.iov_un.un_kbase = &d;
-                iov.iov_len = sizeof(d);
-                ku.uio_iovec = iov;
-                ku.uio_offset = offset;
-                ku.uio_resid = sizeof(buffer);
-                ku.uio_segflg = UIO_SYSSPACE;
-                ku.uio_rw = UIO_READ;
-                ku.uio_space = NULL;
-
-                err = VOP_GETDIRENTRY(v, &ku);
-                if (err) break;
-                if (ku.uio_resid == sizeof(d)) break;
-                offset = ku.uio_offset;
-
-                kprintf("%s\n", d.sfd_name);
+        
+        if (ku.uio_resid == sizeof(name)) {
+            break;
         }
-        vfs_close(v);
-        return 0;
+        
+        // update offset
+        offset= ku.uio_offset;
+        
+
+        kprintf("%s\n", name);
+    }
+
+    vfs_close(v);
+    return 0;
 }
+
+
+
 
 
 
@@ -264,3 +285,4 @@ static struct {
     { "ps",     cmd_ps }
 
 }
+
