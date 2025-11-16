@@ -340,6 +340,31 @@ cmd_cp(int nargs, char **args)
     return result;
 }
 
+static
+int
+cmd_touch(int nargs, char **args)
+{
+    int i, result;
+    struct vnode *v;
+
+    if (nargs <= 1) {
+        kprintf("touch <filename1> ...\n");
+        return EINVAL;
+    }
+
+    for (i=1; i<nargs; i++) {
+        result = vfs_open(args[i], O_WRONLY | O_CREAT | O_TRUNC, &v);
+        
+        if (result) {
+            kprintf("touch: %s: %s\n", args[i], strerror(result));
+            continue;
+        }
+
+        // close it right after
+        vfs_close(v);
+    }
+    return 0;
+}
 
 /*
  * Process a single command.
@@ -419,7 +444,6 @@ cmd_dispatch(char *cmd)
 
 
 
-
 static struct {
 	const char *name;
 	int (*func)(int nargs, char **args);
@@ -430,9 +454,11 @@ static struct {
     { "cat",    cmd_cat },
     { "ps",     cmd_ps },
     { "ls",     cmd_ls },
-	{ "cp",		cmd_cp }
+	{ "cp",		cmd_cp },
+    { "touch",  cmd_touch }
 
 }
+
 
 
 
