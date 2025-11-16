@@ -1,7 +1,9 @@
 # Group Names
 
-Daniel Bokshan / dab21026
-Eric Wang / erw22001
+Daniel Bokshan / dab21026\
+Eric Wang / erw22001\
+Vin Gluck / vlg21004\
+Abinnav Hazarika​ / abh21009
 
 # Our Project
 
@@ -17,3 +19,12 @@ For our project, we chose to implement a multi level queue scheduling system. Th
 - Central scheduler function "scheduleMain" is responsible for allocating processes to each queue based on their priority level. The priority level will not change once it has been set, so a process will remain in that queue until completion. 
 - The scheduler will then execute processes one time step (representing 1ms) at a time, and always executing the jobs from the highest queue which is not empty. If a high priority queue is empty, the scheduler checks the next lower queue for waiting processes.
 - Once the process is finished, the end time is recorded in its struct and it is removed from the current scheduling policy's queue, but remains in the general queue for testing purposes.
+
+# Compiling and Running
+## Unix
+Compile: ```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c```\
+Run: ```./test```
+
+## Windows
+Compile: ```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c```\
+Run: ```test```

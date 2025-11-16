@@ -13,7 +13,7 @@ void sjf(struct process **procArray, int *len, int globalTime){
     }
 
     if (curr_task != -1){
-        printf("Time %d: Executing %s\n", globalTime, procArray[curr_task]->name);
+        printf("Time %d: Executing %s   SJF\n", globalTime, procArray[curr_task]->name);
         procArray[curr_task]->remainingTime--;
         if (procArray[curr_task]->remainingTime == 0){
             //printf("task %d completed, new len is %d\n", procArray[curr_task]->priority, *len - 1);
@@ -38,7 +38,7 @@ void sjf(struct process **procArray, int *len, int globalTime){
     }
     //printf("new task is %d\n", procArray[curr_task]->priority);
     
-    printf("Time %d: Executing %s\n", globalTime, procArray[curr_task]->name);
+    printf("Time %d: Executing %s   SJF\n", globalTime, procArray[curr_task]->name);
     procArray[curr_task]->remainingTime--;
     if (procArray[curr_task]->remainingTime == 0){
         //printf("task %d completed, new len is %d\n", procArray[curr_task]->priority, *len - 1);
