@@ -162,7 +162,8 @@ cmd_cat(int nargs, char **args)
 
     for (i = 1; i < nargs; i++) {
         filename = args[i];
-        offset = 0; 
+        offset = 0; // reset offset to 0 for the start of each new file
+		// 'v' will be populated with a pointer to the file's vnode
         result = vfs_open(filename, O_RDONLY, &v);
         
         if (result) {
@@ -171,24 +172,25 @@ cmd_cat(int nargs, char **args)
         }
 
         while (1) {
+			// prepare the kernel UIO for a read operation
             mk_kuio(&ku, buffer, sizeof(buffer) - 1, offset, UIO_READ);
-
+			// reads data from the file 'v' into the buffer specified by 'ku'
             result = VOP_READ(v, &ku);
             if (result) {
                 kprintf("cat: Error reading %s: %s\n", filename, strerror(result));
                 break;
             }
-
+			// how many bytes were actually read
             size_t bytes_read = (sizeof(buffer) - 1) - ku.uio_resid;
 
             if (bytes_read == 0) {
                 break;
             }
-
+			// null-terminate the buffer to treat it as C string
             buffer[bytes_read] = '\0';
             
             kprintf("%s", buffer);
-
+			// VOP_READ updates the 'uio_offset', save it so the next loop iteration reads from the correct new position
             offset = ku.uio_offset;
         }
 
@@ -291,7 +293,7 @@ int
 cmd_cp(int nargs, char **args)
 {
     char *source_file, *dest_file;
-    struct vnode *v_source, *v_dest;
+    struct vnode *v_source, *v_dest; // pointers for source and dest files
     struct uio ku_read, ku_write;
     char buffer[512]; // 512 byte buffer
     off_t offset;
@@ -311,7 +313,7 @@ cmd_cp(int nargs, char **args)
         kprintf("cp: %s: %s\n", source_file, strerror(result));
         return result;
     }
-
+    // open the destination file: Write-only, Create if needed, Truncate if it exists
     result = vfs_open(dest_file, O_WRONLY | O_CREAT | O_TRUNC, &v_dest);
     if (result) {
         kprintf("cp: %s: %s\n", dest_file, strerror(result));
@@ -329,14 +331,14 @@ cmd_cp(int nargs, char **args)
             break;
         }
 
-        // check how much was read
+        // check how many bytes were read
         n_read = sizeof(buffer) - ku_read.uio_resid;
 
         if (n_read == 0) {
             // end of the file
             break;
         }
-
+        // prepare to WRITE the chunk to the destination
         mk_kuio(&ku_write, buffer, n_read, offset, UIO_WRITE);
 
         // write to destination
@@ -350,7 +352,7 @@ cmd_cp(int nargs, char **args)
         offset += n_read;
     }
 
-    // close files
+    // close files to release their vnodes
     vfs_close(v_source);
     vfs_close(v_dest);
 
@@ -363,14 +365,15 @@ int
 cmd_touch(int nargs, char **args)
 {
     int i, result;
-    struct vnode *v;
+    struct vnode *v; // pointer to the abstract file
 
     if (nargs <= 1) {
         kprintf("touch <filename1> ...\n");
         return EINVAL;
     }
-
+    // iterate through all the filenames given as arguments
     for (i=1; i<nargs; i++) {
+		// open with flags to create the file if it doesn't exist or truncate it if it does.
         result = vfs_open(args[i], O_WRONLY | O_CREAT | O_TRUNC, &v);
         
         if (result) {
@@ -481,6 +484,7 @@ static struct {
     { "touch",  cmd_touch }
 
 }
+
 
 
 
