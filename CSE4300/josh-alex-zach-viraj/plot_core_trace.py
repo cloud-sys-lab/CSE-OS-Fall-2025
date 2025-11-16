@@ -182,9 +182,6 @@ def plot_timelines(cores, title="CPU Run Timeline", seed=None):
     plt.tight_layout()
     plt.show()
 
-
-
-
 def main():
     cores = read_timelines("core_trace.txt")  # fixed file name
     if not cores:
