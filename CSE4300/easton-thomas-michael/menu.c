@@ -1,0 +1,491 @@
+#include <synch.h>
+#include <types.h>
+#include <vnode.h>
+#include <uio.h>
+#include <vfs.h>
+#include <sfs.h>
+#include <machine/spl.h>
+#include <array.h>
+static struct semaphore *done_sem;
+
+
+/*
+ * Helper function for cmd_echo to handle escape characters
+ */
+void print_with_escapes(const char *str) {
+	int i;
+    // for each character in the string
+	for (i = 0; str[i] != '\0'; i++) {
+        // if the character is a "\"
+		if (str[i] == '\\') {
+			i++;
+            // match the next character to the cooresponding escape character and print it
+			switch (str[i]) {
+                case 'a': kprintf("%c", '\a'); break;
+                case 'b': kprintf("%c", '\b'); break;
+                case 'r': kprintf("%c", '\r'); break;
+                case 'v': kprintf("%c", '\v'); break;
+				case 'n': kprintf("%c", '\n'); break;
+				case 't': kprintf("%c", '\t'); break;
+				case '\\': kprintf("%c", '\\'); break;
+				default: kprintf("%c", '\\'); kprintf("%c", str[i]); break;
+			}
+		} else {
+            // just print the character otherwise
+			kprintf("%c", str[i]);
+		}
+	}
+}
+
+/*
+ * Command for echoing a string
+ * By Easton
+ */
+static int cmd_echo(int nargs, char **args) {
+	if (nargs <= 1) {
+		kprintf("Usage: echo [option] String\n");
+		return EINVAL;
+	}
+
+	int i = 1;
+    // get possivle option
+	char *option = args[1];
+	
+    // if the option is "--help" then print out explanation
+	if (strcmp(option, "--help") == 0) {
+		kprintf("Usage: echo [option] String\nOptions:\n\t-n: Removes new line after echo\n\t-E: Default option\n\t-e: Enables escape characters (i.e. \\n, \\t, etc.)\n\t--help: Shows this menu\n");
+		return 0;
+	}
+
+    // if the option exists, then skip it in the arguments
+	if (!strcmp(option, "-n") || !strcmp(option, "-E") || !strcmp(option, "-e")) i++;
+    // for "-E", it is the default option so it just runs normally
+	
+    // for each argument print it out
+	for (i; i < nargs; i++) {
+        // if the option is not "-e" then print out the argument
+		if (strcmp(option, "-e")) {
+			kprintf("%s", args[i]);
+		} else {
+			// otherwise, print the argument with escape characters in mind
+			print_with_escapes(args[i]);
+		}
+
+        // print a space between each argument
+		if (i < nargs - 1) {
+			kprintf(" ");
+		}
+	}
+    // print a new line at the end of the echo (unless the option is "-n")
+	if (strcmp(option, "-n")) kprintf("\n");
+	return 0;
+}
+
+
+
+
+
+
+
+/*
+ * Put the actual child thread asleep for n seconds
+ * By Thomas
+ */
+static
+int
+sleep_thread(void* ptr, unsigned long n)
+{
+        kprintf("Child sleeping for %lu seconds\n", n);
+        clocksleep(n);
+        kprintf("Child done sleeping\n");
+        V(done_sem);
+        return 0;
+}
+
+/*
+ * Command blocking shell for n sec.
+ */
+static
+int
+cmd_sleep(int nargs, char **args)
+{
+        int result;
+        unsigned long n;
+
+        // Semaphore 
+        done_sem = sem_create("done_sem", 0);
+        if (done_sem == NULL) {
+                kprintf("Could not create semaphore\n");
+                return 1;
+        }
+
+        // Taking number
+        if (nargs < 2) {
+                kprintf("Usage: sleep <seconds>\n");
+                return 1;
+        }
+        n = (unsigned long)atoi(args[1]);
+        if (result) {
+                kprintf("Invalid number\n");
+                return 1;
+        }
+
+        // Create child
+        result = thread_fork(args[0], NULL, n, sleep_thread, NULL);
+
+        // Wait for the child to finish
+        kprintf("Parent waiting for child to finish\n");
+        P(done_sem);
+        kprintf("Parent continuing\n");
+
+        return 0;
+}
+
+
+
+static
+int
+cmd_cat(int nargs, char **args)
+{
+    int i, result;
+    char *filename;
+    struct vnode *v;    
+    struct uio ku;        // kernel-space UIO structure
+    char buffer[512];     // buffer to read data into
+    off_t offset;         // position in the file
+
+    // require at least one file
+    if (nargs <= 1) {
+        kprintf("Usage: cat <filename1> [filename2] ...\n");
+        return EINVAL;
+    }
+
+    for (i = 1; i < nargs; i++) {
+        filename = args[i];
+        offset = 0; // reset offset to 0 for the start of each new file
+		// 'v' will be populated with a pointer to the file's vnode
+        result = vfs_open(filename, O_RDONLY, &v);
+        
+        if (result) {
+            kprintf("cat: %s: %s\n", filename, strerror(result));
+            continue;  
+        }
+
+        while (1) {
+			// prepare the kernel UIO for a read operation
+            mk_kuio(&ku, buffer, sizeof(buffer) - 1, offset, UIO_READ);
+			// reads data from the file 'v' into the buffer specified by 'ku'
+            result = VOP_READ(v, &ku);
+            if (result) {
+                kprintf("cat: Error reading %s: %s\n", filename, strerror(result));
+                break;
+            }
+			// how many bytes were actually read
+            size_t bytes_read = (sizeof(buffer) - 1) - ku.uio_resid;
+
+            if (bytes_read == 0) {
+                break;
+            }
+			// null-terminate the buffer to treat it as C string
+            buffer[bytes_read] = '\0';
+            
+            kprintf("%s", buffer);
+			// VOP_READ updates the 'uio_offset', save it so the next loop iteration reads from the correct new position
+            offset = ku.uio_offset;
+        }
+
+        vfs_close(v);
+    }
+
+    return 0;
+}
+
+
+
+static int cmd_ps(int nargs, char **args) {
+	if (nargs != 1) {
+		kprintf("Usage: ps\n");
+		return EINVAL;
+	}
+
+    // disable interrupts
+	int s = splhigh();
+    // array of all open threads
+    extern struct array *allthreads;
+
+    // print top of chart which includes the threads id and its name
+	kprintf("TID\tNAME\n");
+	int i;
+    // for each open thread
+	for (i = 0; i < array_getnum(allthreads); i++) {
+		struct thread *t = array_getguy(allthreads, i);
+        // print out its id and its name
+		kprintf("%3u\t%s\n", t->thread_id, t->t_name);
+	}
+
+    // reenable interrupts
+	splx(s);
+	
+	return 0;
+}
+
+/*
+ * ls command by Thomas 
+ * Works only with no arguments. Arguments are ignored.
+ */
+int
+cmd_ls(int nargs, char **args)
+{
+    int err;
+    struct vnode *v;
+    char *path;
+    off_t offset = 0;
+
+    if (nargs > 1) {
+        path = args[1];
+    } else {
+        path = ".";
+    }
+
+    err = vfs_open(path, O_RDONLY, &v);
+    if (err) {
+        kprintf("ls: failed to open file/directory %s (err=%d)\n", path, err);
+        return 1;
+    }
+
+    while (1) {
+        struct uio ku;
+        char name[NAME_MAX + 1];
+        // initialize name
+        bzero(name, sizeof(name));
+
+        // define uio
+        mk_kuio(&ku, name, sizeof(name), offset, UIO_READ);
+        ku.uio_segflg = UIO_SYSSPACE;
+        ku.uio_space = NULL;
+
+        // read entry
+        err = VOP_GETDIRENTRY(v, &ku);
+
+        // Check errors or end of file
+        if (err) {
+            break;
+        }
+        
+        if (ku.uio_resid == sizeof(name)) {
+            break;
+        }
+        
+        // update offset
+        offset= ku.uio_offset;
+        
+
+        kprintf("%s\n", name);
+    }
+
+    vfs_close(v);
+    return 0;
+}
+
+
+static
+int
+cmd_cp(int nargs, char **args)
+{
+    char *source_file, *dest_file;
+    struct vnode *v_source, *v_dest; // pointers for source and dest files
+    struct uio ku_read, ku_write;
+    char buffer[512]; // 512 byte buffer
+    off_t offset;
+    int result, n_read;
+
+    if (nargs != 3) {
+        kprintf("cp <source_file> <destination_file>\n");
+        return EINVAL;
+    }
+
+    source_file = args[1];
+    dest_file = args[2];
+    offset = 0; // start at beginning of file
+
+    result = vfs_open(source_file, O_RDONLY, &v_source);
+    if (result) {
+        kprintf("cp: %s: %s\n", source_file, strerror(result));
+        return result;
+    }
+    // open the destination file: Write-only, Create if needed, Truncate if it exists
+    result = vfs_open(dest_file, O_WRONLY | O_CREAT | O_TRUNC, &v_dest);
+    if (result) {
+        kprintf("cp: %s: %s\n", dest_file, strerror(result));
+        vfs_close(v_source); // clean up source file
+        return result;
+    }
+
+    while (1) {
+        mk_kuio(&ku_read, buffer, sizeof(buffer), offset, UIO_READ);
+
+        // read from the source
+        result = VOP_READ(v_source, &ku_read);
+        if (result) {
+            kprintf("cp: Error reading %s: %s\n", source_file, strerror(result));
+            break;
+        }
+
+        // check how many bytes were read
+        n_read = sizeof(buffer) - ku_read.uio_resid;
+
+        if (n_read == 0) {
+            // end of the file
+            break;
+        }
+        // prepare to WRITE the chunk to the destination
+        mk_kuio(&ku_write, buffer, n_read, offset, UIO_WRITE);
+
+        // write to destination
+        result = VOP_WRITE(v_dest, &ku_write);
+        if (result) {
+            kprintf("cp: Error writing %s: %s\n", dest_file, strerror(result));
+            break;
+        }
+
+        // update offset for next loop
+        offset += n_read;
+    }
+
+    // close files to release their vnodes
+    vfs_close(v_source);
+    vfs_close(v_dest);
+
+    // result should return 0 if works and no problems
+    return result;
+}
+
+static
+int
+cmd_touch(int nargs, char **args)
+{
+    int i, result;
+    struct vnode *v; // pointer to the abstract file
+
+    if (nargs <= 1) {
+        kprintf("touch <filename1> ...\n");
+        return EINVAL;
+    }
+    // iterate through all the filenames given as arguments
+    for (i=1; i<nargs; i++) {
+		// open with flags to create the file if it doesn't exist or truncate it if it does.
+        result = vfs_open(args[i], O_WRONLY | O_CREAT | O_TRUNC, &v);
+        
+        if (result) {
+            kprintf("touch: %s: %s\n", args[i], strerror(result));
+            continue;
+        }
+
+        // close it right after
+        vfs_close(v);
+    }
+    return 0;
+}
+
+/*
+ * Process a single command.
+ */
+static
+int
+cmd_dispatch(char *cmd)
+{
+	time_t beforesecs, aftersecs, secs;
+	u_int32_t beforensecs, afternsecs, nsecs;
+	char *args[MAXMENUARGS];
+	int nargs=0;
+	char *word;
+	char *context;
+	int i, result;
+	int background = 0;
+
+	for (word = strtok_r(cmd, " \t", &context);
+	     word != NULL;
+	     word = strtok_r(NULL, " \t", &context)) {
+
+		if (nargs >= MAXMENUARGS) {
+			kprintf("Command line has too many words\n");
+			return E2BIG;
+		}
+
+        // if the last argument is "&"
+		if (strcmp(word, "&") == 0 && strtok_r(NULL, " \t", &context) == NULL) {
+            // set background to "true" and no not add it to the arguments
+			background = 1;
+			break;
+		}
+
+		args[nargs++] = word;
+	}
+
+	if (nargs==0) {
+		return 0;
+	}
+
+	for (i=0; cmdtable[i].name; i++) {
+		if (*cmdtable[i].name && !strcmp(args[0], cmdtable[i].name)) {
+			assert(cmdtable[i].func!=NULL);
+
+            // if the & operator was included
+			if (background) {
+				kprintf("Running in background\n");
+                
+                // copy the arguments so they can be passed through the fork
+				char **bgargs = kmalloc(sizeof(char*) * nargs);
+				int j;
+				for (j = 0; j < nargs; j++) {
+					bgargs[j] = kstrdup(args[j]);
+				}
+
+                // create the fork running the function
+				thread_fork(args[0], nargs, bgargs, cmdtable[i].func, NULL);
+
+				return 0;
+			}
+
+			gettime(&beforesecs, &beforensecs);
+
+			result = cmdtable[i].func(nargs, args);
+
+			gettime(&aftersecs, &afternsecs);
+			getinterval(beforesecs, beforensecs,
+				    aftersecs, afternsecs,
+				    &secs, &nsecs);
+
+			kprintf("Operation took %lu.%09lu seconds\n",
+				(unsigned long) secs,
+				(unsigned long) nsecs);
+
+			return result;
+		}
+	}
+
+	kprintf("%s: Command not found\n", args[0]);
+	return EINVAL;
+}
+
+
+
+static struct {
+	const char *name;
+	int (*func)(int nargs, char **args);
+} cmdtable[] = {
+    /* operations */
+    { "echo", 	cmd_echo },
+    { "sleep",  cmd_sleep },
+    { "cat",    cmd_cat },
+    { "ps",     cmd_ps },
+    { "ls",     cmd_ls },
+	{ "cp",		cmd_cp },
+    { "touch",  cmd_touch }
+
+}
+
+
+
+
+
