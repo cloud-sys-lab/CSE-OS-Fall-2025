@@ -14,9 +14,12 @@ static struct semaphore *done_sem;
  */
 void print_with_escapes(const char *str) {
 	int i;
+    // for each character in the string
 	for (i = 0; str[i] != '\0'; i++) {
+        // if the character is a "\"
 		if (str[i] == '\\') {
 			i++;
+            // match the next character to the cooresponding escape character and print it
 			switch (str[i]) {
                 case 'a': kprintf("%c", '\a'); break;
                 case 'b': kprintf("%c", '\b'); break;
@@ -28,6 +31,7 @@ void print_with_escapes(const char *str) {
 				default: kprintf("%c", '\\'); kprintf("%c", str[i]); break;
 			}
 		} else {
+            // just print the character otherwise
 			kprintf("%c", str[i]);
 		}
 	}
@@ -44,27 +48,35 @@ static int cmd_echo(int nargs, char **args) {
 	}
 
 	int i = 1;
+    // get possivle option
 	char *option = args[1];
 	
+    // if the option is "--help" then print out explanation
 	if (strcmp(option, "--help") == 0) {
 		kprintf("Usage: echo [option] String\nOptions:\n\t-n: Removes new line after echo\n\t-E: Default option\n\t-e: Enables escape characters (i.e. \\n, \\t, etc.)\n\t--help: Shows this menu\n");
 		return 0;
 	}
 
+    // if the option exists, then skip it in the arguments
 	if (!strcmp(option, "-n") || !strcmp(option, "-E") || !strcmp(option, "-e")) i++;
+    // for "-E", it is the default option so it just runs normally
 	
+    // for each argument print it out
 	for (i; i < nargs; i++) {
+        // if the option is not "-e" then print out the argument
 		if (strcmp(option, "-e")) {
 			kprintf("%s", args[i]);
 		} else {
-			
+			// otherwise, print the argument with escape characters in mind
 			print_with_escapes(args[i]);
 		}
 
+        // print a space between each argument
 		if (i < nargs - 1) {
 			kprintf(" ");
 		}
 	}
+    // print a new line at the end of the echo (unless the option is "-n")
 	if (strcmp(option, "-n")) kprintf("\n");
 	return 0;
 }
@@ -194,16 +206,22 @@ static int cmd_ps(int nargs, char **args) {
 		return EINVAL;
 	}
 
+    // disable interrupts
 	int s = splhigh();
+    // array of all open threads
     extern struct array *allthreads;
 
+    // print top of chart which includes the threads id and its name
 	kprintf("TID\tNAME\n");
 	int i;
+    // for each open thread
 	for (i = 0; i < array_getnum(allthreads); i++) {
 		struct thread *t = array_getguy(allthreads, i);
+        // print out its id and its name
 		kprintf("%3u\t%s\n", t->thread_id, t->t_name);
 	}
 
+    // reenable interrupts
 	splx(s);
 	
 	return 0;
@@ -391,7 +409,9 @@ cmd_dispatch(char *cmd)
 			return E2BIG;
 		}
 
+        // if the last argument is "&"
 		if (strcmp(word, "&") == 0 && strtok_r(NULL, " \t", &context) == NULL) {
+            // set background to "true" and no not add it to the arguments
 			background = 1;
 			break;
 		}
@@ -407,15 +427,18 @@ cmd_dispatch(char *cmd)
 		if (*cmdtable[i].name && !strcmp(args[0], cmdtable[i].name)) {
 			assert(cmdtable[i].func!=NULL);
 
-			//if (!strcmp("&", args[nargs-1])) {
+            // if the & operator was included
 			if (background) {
 				kprintf("Running in background\n");
+                
+                // copy the arguments so they can be passed through the fork
 				char **bgargs = kmalloc(sizeof(char*) * nargs);
 				int j;
 				for (j = 0; j < nargs; j++) {
 					bgargs[j] = kstrdup(args[j]);
 				}
 
+                // create the fork running the function
 				thread_fork(args[0], nargs, bgargs, cmdtable[i].func, NULL);
 
 				return 0;
