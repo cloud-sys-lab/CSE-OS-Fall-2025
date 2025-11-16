@@ -34,7 +34,9 @@ static struct array *zombies;
 /* Total number of outstanding threads. Does not count zombies[]. */
 static int numthreads;
 
+// Added an array of each active thread
 struct array *allthreads;
+// The next available ID
 static unsigned next_tid = 1;
 
 /*
@@ -221,6 +223,7 @@ thread_bootstrap(void)
 		panic("Cannot create zombies array\n");
 	}
 	
+    // Set up the new array of active threads
 	allthreads = array_create();
 	if (allthreads == NULL) {
 		panic("Cannot create allthreads array\n");
@@ -243,6 +246,7 @@ thread_bootstrap(void)
 	/* Initialize the first thread's pcb */
 	md_initpcb0(&me->t_pcb);
 
+    // Assign thread its ID and add it to the array
 	me->thread_id = next_tid++;
 	array_add(allthreads, me);
 
@@ -351,6 +355,7 @@ thread_fork(const char *name,
 	 */
 	numthreads++;
 
+    // Adds the new thread to the array
 	result = array_add(allthreads, newguy);
 	assert(result == 0);
 
@@ -511,6 +516,7 @@ thread_exit(void)
 		curthread->t_cwd = NULL;
 	}
 
+    // Removes thread from the array
 	int i;
 	for (i = 0; i < array_getnum(allthreads); i++) {
 		if (array_getguy(allthreads, i) == curthread) {

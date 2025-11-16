@@ -38,6 +38,7 @@ struct thread {
 	 */
 	struct vnode *t_cwd;
 
+    // Added ID for each thread
 	unsigned thread_id;
 };
 
