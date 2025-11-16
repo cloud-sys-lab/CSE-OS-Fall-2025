@@ -1,2 +1,1 @@
-Kashyap Rao
-Ryan Obuchon
+Kashyap Rao and Ryan Obuchon
