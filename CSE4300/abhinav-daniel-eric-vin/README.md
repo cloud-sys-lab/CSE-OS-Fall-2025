@@ -22,7 +22,9 @@ For our project, we chose to implement a multi level queue scheduling system. Th
 
 # Compiling and Running
 ## Unix
-```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c\./test ```
+```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c```
+```./test```
 
 ## Windows
-```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c\test ```
+```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c```
+```test ```
