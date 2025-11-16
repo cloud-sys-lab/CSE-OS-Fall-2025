@@ -47,7 +47,7 @@ static int cmd_echo(int nargs, char **args) {
 	char *option = args[1];
 	
 	if (strcmp(option, "--help") == 0) {
-		kprintf("Usage: echo [option] String\nOptions:\n\t-n: Removes new line after echo\n\t-E: Default option\n\t-e: Enables escape characters (i.e. \\n, \\t, etc.)\n\t--help: Shows this menu");
+		kprintf("Usage: echo [option] String\nOptions:\n\t-n: Removes new line after echo\n\t-E: Default option\n\t-e: Enables escape characters (i.e. \\n, \\t, etc.)\n\t--help: Shows this menu\n");
 		return 0;
 	}
 
