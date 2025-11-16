@@ -3,7 +3,7 @@
 Daniel Bokshan / dab21026\
 Eric Wang / erw22001\
 Vin Gluck / vlg21004\
-Abinnav Hazarika​ / 
+Abinnav Hazarika​ / abh21009
 
 # Our Project
 
@@ -27,4 +27,4 @@ Run: ```./test```
 
 ## Windows
 Compile: ```gcc -o test test.c schedule-main.c rr.c fifo.c srtrf.c sjf.c```\
-Run: ```test ```
+Run: ```test```
