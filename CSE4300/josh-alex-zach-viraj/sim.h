@@ -78,15 +78,11 @@ extern int SIM_TIME;
 #include "cpu.h"
 
 /* ===== Workload API ===== */
-
 /* Build an empty, sorted-by-arrival "arrivals" queue through finalize() */
 /* workload api you requested */
 void workload_init(Queue* workload);
 void workload_add(Queue* workload, int tid, int arrival, int burst, int priority);
 /* Move any threads whose arrival_time == now from workload -> ready */
 void workload_admit_tick(Queue* workload, Queue* ready, int now);
-
-/* Utility to free the simple workload list (after finalize). */
-void workload_clear(void);
 
 #endif /* SIM_H */

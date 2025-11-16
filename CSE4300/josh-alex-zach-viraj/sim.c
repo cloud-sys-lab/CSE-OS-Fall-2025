@@ -133,7 +133,7 @@ int workload_prompt(Queue* workload, FILE* in, FILE* out) {
 
     for (int i = 1; i <= n; ++i) {
         int arrival, burst, priority;
-        if (out) fprintf(out, "Thread %d - enter arrival and burst (e.g. 0 5 0): ", i);
+        if (out) fprintf(out, "Thread %d - enter arrival burst and priority (e.g. 0 5 0): ", i);
         for (;;) {
             int rc = fscanf(in, "%d %d %d", &arrival, &burst, &priority);
             if (rc == 3 && arrival >= 0 && burst > 0) break;
